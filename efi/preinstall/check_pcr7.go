@@ -300,14 +300,14 @@ func checkVariableDriverConfigEventOrdering(expected *[]secureBootVariableDefini
 		config := expectedTmp[0]
 		expectedTmp = expectedTmp[1:]
 
-		if data.VariableName == config.GUID && data.UnicodeName == config.Name {
+		if data.VariableName == config.name.GUID && data.UnicodeName == config.name.Name {
 			*expected = expectedTmp
 			return nil
 		}
 
-		if !e.omitEmpty {
+		if !config.omitEmpty {
 			return fmt.Errorf("unexpected EV_EFI_VARIABLE_DRIVER_CONFIG event ordering (expected %s-%v, got %s-%v)",
-				config.Name, config.GUID, data.UnicodeName, data.VariableName)
+				config.name.Name, config.name.GUID, data.UnicodeName, data.VariableName)
 		}
 
 		// The next expected measurement is one that can be omitted if it is empty.
@@ -453,7 +453,7 @@ func checkSecureBootPolicyMeasurementsAndObtainAuthorities(ctx context.Context, 
 	// expected order, else WithSecureBootPolicyProfile() will generate an invalid policy,
 	// because we hard code the order. The order here is what we expect to see.
 	configs := []secureBootVariableDefinition{
-		{name: {Name: "SecureBoot", GUID: efi.GlobalVariable}},
+		{name: efi.VariableDescriptor{Name: "SecureBoot", GUID: efi.GlobalVariable}},
 		{name: efi.PKVariable},
 		{name: efi.KEKVariable},
 		{name: efi.DbVariable},
@@ -463,7 +463,7 @@ func checkSecureBootPolicyMeasurementsAndObtainAuthorities(ctx context.Context, 
 		configs = append(configs, secureBootVariableDefinition{name: efi.DbtVariable, omitEmpty: true})
 	}
 	if osIndicationsSupported&efi.OSIndicationStartOSRecovery > 0 {
-		config = append(configs, secureBootVariableDefinition{name: efi.DbrVariable, omitEmpty: true})
+		configs = append(configs, secureBootVariableDefinition{name: efi.DbrVariable, omitEmpty: true})
 	}
 	// TODO: Add optional SPDM variables in the future.
 

@@ -80,6 +80,23 @@ type mockPcrBranchEvent struct {
 	varData []byte
 }
 
+type mockPcrBranchVarCtx struct {
+	vars VarReadWriter
+}
+
+func (c *mockPcrBranchVarCtx) Get(name string, guid efi.GUID) (efi.VariableAttributes, []byte, error) {
+	data, attrs, err := c.vars.ReadVar(name, guid)
+	return attrs, data, err
+}
+
+func (c *mockPcrBranchVarCtx) Set(name string, guid efi.GUID, attrs efi.VariableAttributes, data []byte) error {
+	return c.vars.WriteVar(name, guid, attrs, data)
+}
+
+func (c *mockPcrBranchVarCtx) List() ([]efi.VariableDescriptor, error) {
+	return nil, errors.New("not supported")
+}
+
 type mockPcrBranchContext struct {
 	PcrProfileContext
 	params LoadParams
@@ -104,6 +121,14 @@ func newMockPcrBranchContext(pc PcrProfileContext, params *LoadParams, vars VarR
 
 func (c *mockPcrBranchContext) Params() LoadParams {
 	return c.params
+}
+
+func (c *mockPcrBranchContext) VarContext() context.Context {
+	return context.WithValue(
+		context.Background(),
+		efi.VarsBackendKey{},
+		&mockPcrBranchVarCtx{vars: c.vars},
+	)
 }
 
 func (c *mockPcrBranchContext) Vars() VarReadWriter {
